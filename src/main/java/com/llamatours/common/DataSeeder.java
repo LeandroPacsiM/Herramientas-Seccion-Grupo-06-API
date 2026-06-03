@@ -228,7 +228,7 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
 
         exp.getItineraries().add(itinerary(exp, 1, "Laguna 69", "Salida desde Huaraz hacia Cebollapampa. Caminata de 3 horas hasta Laguna 69."));
-        exp.getImages().add(image(exp, "https://images.unsplash.com/photo-1614586125858-e695dd97d1b6?w=1080", 1));
+        exp.getImages().add(image(exp, "https://bushop.com/peru/wp-content/uploads/sites/10/laguna69-featured-1_1.jpg", 1));
         exp.getAvailabilities().addAll(List.of(
                 availability(exp, LocalDate.of(2026, 6, 6), LocalDate.of(2026, 6, 6), 25, 18),
                 availability(exp, LocalDate.of(2026, 6, 20), LocalDate.of(2026, 6, 20), 25, 25),
