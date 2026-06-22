@@ -2,6 +2,7 @@ package com.llamatours.booking;
 
 import com.llamatours.booking.dto.CreateBookingRequest;
 import com.llamatours.booking.service.BookingService;
+import com.llamatours.enums.BookingStatus;
 import com.llamatours.enums.Difficulty;
 import com.llamatours.enums.Role;
 import com.llamatours.expedition.dto.CreateExpeditionRequest;
@@ -62,8 +63,8 @@ class BookingServiceTest {
         expeditionReq.setLocation("Test");
 
         var availabilityDto = new AvailabilityDTO();
-        availabilityDto.setStartDate(LocalDate.of(2026, 6, 1));
-        availabilityDto.setEndDate(LocalDate.of(2026, 6, 5));
+        availabilityDto.setStartDate(LocalDate.now().plusDays(10));
+        availabilityDto.setEndDate(LocalDate.now().plusDays(15));
         availabilityDto.setCapacity(10);
 
         expeditionReq.setAvailabilities(List.of(availabilityDto));
@@ -73,7 +74,7 @@ class BookingServiceTest {
     }
 
     @Test
-    void createBooking_shouldReduceAvailableSpots() {
+    void createBooking_shouldReduceAvailableSpotsAndSetPending() {
         var request = new CreateBookingRequest();
         request.setAvailabilityId(availabilityId);
         request.setPeopleCount(2);
@@ -84,6 +85,11 @@ class BookingServiceTest {
         assertNotNull(response.getId());
         assertEquals(2, response.getPeopleCount());
         assertEquals(testUser.getId(), response.getUserId());
+        assertEquals(BookingStatus.PENDING, response.getStatus());
+        assertEquals(200.0, response.getTotalAmount());
+        assertNotNull(response.getCreatedAt());
+        assertNotNull(response.getUpdatedAt());
+        assertNull(response.getPaymentId());
     }
 
     @Test
@@ -93,6 +99,39 @@ class BookingServiceTest {
         request.setPeopleCount(100);
 
         assertThrows(RuntimeException.class, () -> bookingService.createBooking(request, testUser));
+    }
+
+    @Test
+    void createBooking_shouldThrowWhenDateIsPast() {
+        var slug = "past-expedition-" + UUID.randomUUID();
+
+        var expeditionReq = new CreateExpeditionRequest();
+        expeditionReq.setName("Past Expedition");
+        expeditionReq.setSlug(slug);
+        expeditionReq.setDescription("test");
+        expeditionReq.setPrice(100.0);
+        expeditionReq.setDurationDays(3);
+        expeditionReq.setDifficulty(Difficulty.EASY);
+        expeditionReq.setLocation("Test");
+
+        var availabilityDto = new AvailabilityDTO();
+        availabilityDto.setStartDate(LocalDate.now().minusDays(5));
+        availabilityDto.setEndDate(LocalDate.now().minusDays(1));
+        availabilityDto.setCapacity(10);
+
+        expeditionReq.setAvailabilities(List.of(availabilityDto));
+
+        var expedition = expeditionService.createExpedition(expeditionReq);
+        var pastAvailabilityId = expedition.getAvailabilities().get(0).getId();
+
+        var request = new CreateBookingRequest();
+        request.setAvailabilityId(pastAvailabilityId);
+        request.setPeopleCount(2);
+
+        var exception = assertThrows(RuntimeException.class, () -> 
+                bookingService.createBooking(request, testUser)
+        );
+        assertEquals("Cannot book a past date", exception.getMessage());
     }
 
     @Test
@@ -106,4 +145,36 @@ class BookingServiceTest {
         assertEquals(1, bookings.size());
         assertEquals(testUser.getId(), bookings.get(0).getUserId());
     }
+
+    @Test
+    void payBooking_shouldChangeStatusToConfirmedAndRecordPaymentId() {
+        var request = new CreateBookingRequest();
+        request.setAvailabilityId(availabilityId);
+        request.setPeopleCount(2);
+
+        var created = bookingService.createBooking(request, testUser);
+        assertEquals(BookingStatus.PENDING, created.getStatus());
+        assertNull(created.getPaymentId());
+
+        var paid = bookingService.payBooking(created.getId(), "PAY-12345", testUser.getId());
+        assertEquals(BookingStatus.CONFIRMED, paid.getStatus());
+        assertEquals("PAY-12345", paid.getPaymentId());
+        assertNotNull(paid.getUpdatedAt());
+    }
+
+    @Test
+    void payBooking_shouldThrowIfAlreadyConfirmed() {
+        var request = new CreateBookingRequest();
+        request.setAvailabilityId(availabilityId);
+        request.setPeopleCount(2);
+
+        var created = bookingService.createBooking(request, testUser);
+        bookingService.payBooking(created.getId(), "PAY-12345", testUser.getId());
+
+        assertThrows(RuntimeException.class, () -> 
+                bookingService.payBooking(created.getId(), "PAY-67890", testUser.getId())
+        );
+    }
 }
+
+

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -30,11 +31,20 @@ public class BookingService {
             throw new RuntimeException("Not enough available spots");
         }
 
+        if (availability.getStartDate().isBefore(java.time.LocalDate.now())) {
+            throw new RuntimeException("Cannot book a past date");
+        }
+
         var expedition = availability.getExpedition();
+        var now = LocalDateTime.now();
+        var totalAmount = request.getPeopleCount() * expedition.getPrice();
 
         var booking = Booking.builder()
                 .peopleCount(request.getPeopleCount())
-                .status(BookingStatus.CONFIRMED)
+                .status(BookingStatus.PENDING)
+                .totalAmount(totalAmount)
+                .createdAt(now)
+                .updatedAt(now)
                 .user(user)
                 .expedition(expedition)
                 .availability(availability)
@@ -72,9 +82,30 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
+        booking.setUpdatedAt(LocalDateTime.now());
         booking.getAvailability().setAvailableSpots(
                 booking.getAvailability().getAvailableSpots() + booking.getPeopleCount()
         );
+    }
+
+    @Transactional
+    public BookingResponse payBooking(Long bookingId, String paymentId, Long userId) {
+        var booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Booking does not belong to user");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new RuntimeException("Booking is not in PENDING status");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setPaymentId(paymentId);
+        booking.setUpdatedAt(LocalDateTime.now());
+
+        return toResponse(booking);
     }
 
     private BookingResponse toResponse(Booking booking) {
@@ -88,6 +119,11 @@ public class BookingService {
                 .availabilityId(booking.getAvailability().getId())
                 .startDate(booking.getAvailability().getStartDate())
                 .endDate(booking.getAvailability().getEndDate())
+                .createdAt(booking.getCreatedAt())
+                .updatedAt(booking.getUpdatedAt())
+                .totalAmount(booking.getTotalAmount())
+                .paymentId(booking.getPaymentId())
                 .build();
     }
 }
+
