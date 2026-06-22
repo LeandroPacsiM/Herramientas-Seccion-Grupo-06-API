@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -23,4 +24,9 @@ public class BookingResponse {
     private Long availabilityId;
     private LocalDate startDate;
     private LocalDate endDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private Double totalAmount;
+    private String paymentId;
 }
+
