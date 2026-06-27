@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -89,16 +91,19 @@ public class BookingService {
     }
 
     @Transactional
-    public BookingResponse payBooking(Long bookingId, String paymentId, Long userId) {
+    public BookingResponse confirmBooking(Long bookingId, String paymentId) {
         var booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
 
-        if (!booking.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Booking does not belong to user");
-        }
-
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new RuntimeException("Booking is not in PENDING status");
+        }
+
+        if (booking.getReceiptNumber() == null) {
+            String receiptNumber = "LLT-"
+                    + LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"))
+                    + "-" + String.format("%04d", booking.getId());
+            booking.setReceiptNumber(receiptNumber);
         }
 
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -123,6 +128,7 @@ public class BookingService {
                 .updatedAt(booking.getUpdatedAt())
                 .totalAmount(booking.getTotalAmount())
                 .paymentId(booking.getPaymentId())
+                .receiptNumber(booking.getReceiptNumber())
                 .build();
     }
 }

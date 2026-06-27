@@ -37,6 +37,9 @@ public class Booking {
     @Column(name = "payment_id")
     private String paymentId;
 
+    @Column(name = "receipt_number")
+    private String receiptNumber;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

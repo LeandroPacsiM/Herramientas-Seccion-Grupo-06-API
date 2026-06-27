@@ -147,7 +147,7 @@ class BookingServiceTest {
     }
 
     @Test
-    void payBooking_shouldChangeStatusToConfirmedAndRecordPaymentId() {
+    void confirmBooking_shouldChangeStatusToConfirmedAndRecordPaymentId() {
         var request = new CreateBookingRequest();
         request.setAvailabilityId(availabilityId);
         request.setPeopleCount(2);
@@ -156,23 +156,23 @@ class BookingServiceTest {
         assertEquals(BookingStatus.PENDING, created.getStatus());
         assertNull(created.getPaymentId());
 
-        var paid = bookingService.payBooking(created.getId(), "PAY-12345", testUser.getId());
+        var paid = bookingService.confirmBooking(created.getId(), "CS-12345");
         assertEquals(BookingStatus.CONFIRMED, paid.getStatus());
-        assertEquals("PAY-12345", paid.getPaymentId());
+        assertEquals("CS-12345", paid.getPaymentId());
         assertNotNull(paid.getUpdatedAt());
     }
 
     @Test
-    void payBooking_shouldThrowIfAlreadyConfirmed() {
+    void confirmBooking_shouldThrowIfAlreadyConfirmed() {
         var request = new CreateBookingRequest();
         request.setAvailabilityId(availabilityId);
         request.setPeopleCount(2);
 
         var created = bookingService.createBooking(request, testUser);
-        bookingService.payBooking(created.getId(), "PAY-12345", testUser.getId());
+        bookingService.confirmBooking(created.getId(), "CS-12345");
 
         assertThrows(RuntimeException.class, () -> 
-                bookingService.payBooking(created.getId(), "PAY-67890", testUser.getId())
+                bookingService.confirmBooking(created.getId(), "CS-67890")
         );
     }
 }
