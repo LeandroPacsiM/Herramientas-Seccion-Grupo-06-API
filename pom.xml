@@ -112,6 +112,13 @@
         	<optional>true</optional>
     	</dependency>
 
+    	<!-- STRIPE -->
+    	<dependency>
+        	<groupId>com.stripe</groupId>
+        	<artifactId>stripe-java</artifactId>
+        	<version>33.0.0</version>
+    	</dependency>
+
     	<!-- TEST -->
     	<dependency>
         	<groupId>org.springframework.boot</groupId>

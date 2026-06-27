@@ -28,5 +28,6 @@ public class BookingResponse {
     private LocalDateTime updatedAt;
     private Double totalAmount;
     private String paymentId;
+    private String receiptNumber;
 }
 

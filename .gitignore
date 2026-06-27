@@ -33,3 +33,11 @@ build/
 .vscode/
 AGENTS.md
 API.md
+
+# Environment variables (local dev)
+.env
+
+# Stripe CLI (npm artifacts)
+node_modules/
+package.json
+package-lock.json
