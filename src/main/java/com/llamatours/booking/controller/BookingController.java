@@ -40,11 +40,5 @@ public class BookingController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/pay")
-    public ResponseEntity<BookingResponse> payBooking(@PathVariable Long id,
-                                                       @RequestParam String paymentId,
-                                                       @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(bookingService.payBooking(id, paymentId, user.getId()));
-    }
 }
 
