@@ -24,7 +24,7 @@ public class StripeWebhookController {
 
     private final PaymentService paymentService;
 
-    @Value("${stripe.webhook.secret}")
+    @Value("${stripe.webhook.secret:}")
     private String webhookSecret;
 
     @PostMapping("/webhook")
